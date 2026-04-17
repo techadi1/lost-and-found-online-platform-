@@ -25,10 +25,14 @@ if (!fs.existsSync(uploadsDir)) {
 app.use(cors());
 app.use(express.json());
 app.use(async (req, res, next) => {
-  if (mongoose.connection.readyState !== 1) {
-    await mongoose.connect(process.env.MONGODB_URI);
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      await mongoose.connect(process.env.MONGODB_URI);
+    }
+    next();
+  } catch (err) {
+    res.status(500).json({ message: "Database connection failed", error: err.message });
   }
-  next();
 });
 
 
