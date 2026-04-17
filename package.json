@@ -1,14 +1,13 @@
 {
-  "name": "lost-and-found-platform",
+  "name": "bennett-lost-and-found",
   "version": "1.0.0",
   "scripts": {
+    "build": "cd frontend && npm install && npm run build",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
-    "frontend": "cd frontend && npm run dev",
-    "backend": "cd backend && npm run dev",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
     "seed": "cd backend && npm run seed"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.1.0"
   }
 }
