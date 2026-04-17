@@ -1,0 +1,210 @@
+.navbar-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.top-red-line {
+  height: 4px;
+  background-color: #e31e24; /* Bennett Red */
+  width: 100%;
+}
+
+.logo-header {
+  background-color: #ffffff;
+  padding: 15px 0;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+}
+
+.main-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.logo-img {
+  height: clamp(40px, 6vw, 65px);
+  object-fit: contain;
+}
+
+.logo-separator {
+  width: 2px;
+  height: 40px;
+  background-color: #003366; /* Bennett Blue */
+  margin: 0 20px;
+}
+
+.platform-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #003366;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.nav-bar-blue {
+  background-color: #003366; /* Bennett Navy Blue */
+  color: white;
+  padding: 0;
+}
+
+.nav-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 55px;
+}
+
+.nav-links {
+  display: flex;
+  height: 100%;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-link.active {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-bottom-color: #e31e24;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.nav-action-item {
+  color: white;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  opacity: 0.9;
+  transition: all 0.2s;
+}
+
+.nav-action-item:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.btn-report {
+  background-color: #e31e24;
+  color: white;
+  padding: 8px 18px;
+  border-radius: 5px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 10px rgba(227, 30, 36, 0.3);
+  transition: all 0.2s;
+}
+
+.btn-report:hover {
+  background-color: #c41217;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(227, 30, 36, 0.4);
+}
+
+.login-pill {
+  background-color: #ffffff;
+  color: #003366;
+  padding: 6px 15px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.login-pill:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}
+
+.notification-bell {
+  position: relative;
+  color: white;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #e31e24;
+  color: white;
+  font-size: 0.7rem;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.logout-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  opacity: 0.8;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+  .logo-separator, .platform-name, .nav-action-item span {
+    display: none;
+  }
+  
+  .nav-link {
+    padding: 0 10px;
+    font-size: 0.85rem;
+  }
+  
+  .btn-report span {
+    display: none;
+  }
+}
