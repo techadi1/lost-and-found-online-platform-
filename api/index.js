@@ -16,10 +16,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '../uploads');
+const uploadsDir = path.join("/tmp", "uploads");
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+  try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (e) { console.log("Uploads dir creation skipped or failed"); }
 }
+
 
 // Middleware
 app.use(cors());
