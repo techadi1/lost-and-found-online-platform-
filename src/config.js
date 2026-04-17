@@ -1,4 +1,4 @@
-// On Vercel, we use relative paths so the frontend hits the same domain's /api
-// In development, the Vite proxy handles this.
+// Unified configuration for local and production Vercel environments
 export const API_URL = '/api';
-export const BASE_URL = window.location.origin;
+export const API_BASE_URL = '/api';
+export const BASE_URL = typeof window !== 'undefined' ? window.location.origin : '';
