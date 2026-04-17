@@ -2,7 +2,7 @@
   "name": "bennett-lost-and-found",
   "version": "1.0.0",
   "scripts": {
-    "build": "cd frontend && npm install && npm run build",
+    "build": "npm install --prefix frontend && npm run build --prefix frontend",
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
     "seed": "cd backend && npm run seed"
