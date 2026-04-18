@@ -13,6 +13,9 @@ const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [skip, setSkip] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const LIMIT = 12;
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [sortBy, setSortBy] = useState('newest');
@@ -31,23 +34,42 @@ const Home = () => {
     } else {
       setStatusFilter('all');
     }
-    fetchItems();
+    setItems([]);
+    setSkip(0);
+    setHasMore(true);
+    fetchItems(0);
   }, [location.pathname]);
 
-  const fetchItems = async () => {
+  const fetchItems = async (currentSkip) => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/items`);
+      const response = await fetch(`${API_URL}/items?limit=${LIMIT}&skip=${currentSkip}`);
       if (!response.ok) {
         throw new Error('Failed to fetch items');
       }
       const data = await response.json();
-      setItems(data);
+      
+      if (data.length < LIMIT) {
+        setHasMore(false);
+      }
+      
+      if (currentSkip === 0) {
+        setItems(data);
+      } else {
+        setItems(prev => [...prev, ...data]);
+      }
+      
       setLoading(false);
     } catch (err) {
       setError(err.message);
       setLoading(false);
     }
+  };
+
+  const loadMore = () => {
+    const nextSkip = skip + LIMIT;
+    setSkip(nextSkip);
+    fetchItems(nextSkip);
   };
 
   const handleClaim = async (itemId) => {
@@ -263,6 +285,14 @@ const Home = () => {
                 <h3>No items found</h3>
                 <p>Try adjusting your filters or search term.</p>
                 <button onClick={() => {setSearchTerm(''); setStatusFilter('all'); setCategoryFilter('all');}} className="btn btn-outline">Clear All Filters</button>
+              </div>
+            )}
+            
+            {hasMore && !loading && items.length > 0 && (
+              <div style={{textAlign: 'center', marginTop: '40px', marginBottom: '60px'}}>
+                <button className="btn btn-primary" onClick={loadMore}>
+                  Load More Items
+                </button>
               </div>
             )}
           </>

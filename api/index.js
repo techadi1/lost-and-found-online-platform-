@@ -189,7 +189,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/items', async (req, res) => {
   try {
-    const { status, category, userId, isAdmin, excludeImage } = req.query;
+    const { status, category, userId, isAdmin, excludeImage, limit = 20, skip = 0 } = req.query;
     let query = {};
     
     if (isAdmin !== 'true') {
@@ -210,6 +210,8 @@ app.get('/api/items', async (req, res) => {
     const items = await Item.find(query, projection)
       .populate('reportedBy', 'name email')
       .sort({ createdAt: -1 })
+      .skip(parseInt(skip))
+      .limit(parseInt(limit))
       .lean();
     res.json(items);
   } catch (error) {
