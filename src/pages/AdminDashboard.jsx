@@ -427,12 +427,12 @@ const AdminDashboard = () => {
 
   const filteredReports = itemFilter === 'All' 
     ? items 
-    : items.filter(item => item.status === itemFilter);
+    : items.filter(item => item.status && item.status.toLowerCase() === itemFilter.toLowerCase());
 
   const stats = [
     { label: 'Total Reports', value: items.length.toString(), icon: <FiBox />, color: 'blue', filter: 'All' },
-    { label: 'Found Items', value: items.filter(i => i.status === 'Found').length.toString(), icon: <FiCheckCircle />, color: 'green', filter: 'Found' },
-    { label: 'Lost Items', value: items.filter(i => i.status === 'Lost').length.toString(), icon: <FiClock />, color: 'orange', filter: 'Lost' },
+    { label: 'Found Items', value: items.filter(i => i.status && i.status.toLowerCase() === 'found').length.toString(), icon: <FiCheckCircle />, color: 'green', filter: 'Found' },
+    { label: 'Lost Items', value: items.filter(i => i.status && i.status.toLowerCase() === 'lost').length.toString(), icon: <FiClock />, color: 'orange', filter: 'Lost' },
   ];
 
   const analyticsStats = [
