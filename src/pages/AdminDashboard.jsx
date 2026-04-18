@@ -10,6 +10,12 @@ const AdminDashboard = () => {
   const [supportTickets, setSupportTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [analytics, setAnalytics] = useState({
+    pendingApprovals: 0,
+    totalClaims: 0,
+    openTickets: 0,
+    resolvedTickets: 0,
+  });
   const [editingItem, setEditingItem] = useState(null);
   const [editingClaim, setEditingClaim] = useState(null);
   const [editingTicket, setEditingTicket] = useState(null);
