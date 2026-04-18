@@ -36,6 +36,15 @@ const AdminDashboard = () => {
       return;
     }
 
+    // High speed cache load
+    const cachedStats = localStorage.getItem('admin_stats_cache');
+    const cachedItems = localStorage.getItem('admin_items_cache');
+    if (cachedStats) setAnalytics(JSON.parse(cachedStats));
+    if (cachedItems) {
+      setItems(JSON.parse(cachedItems));
+      setLoading(false);
+    }
+
     fetchData();
   }, [navigate]);
 
@@ -53,23 +62,40 @@ const AdminDashboard = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const [itemsRes, claimsRes, ticketsRes] = await Promise.all([
-        fetch(`${API_URL}/items?isAdmin=true`, { headers }),
+      const [itemsRes, claimsRes, supportRes, statsRes] = await Promise.all([
+        fetch(`${API_URL}/items?isAdmin=true&excludeImage=true`, { headers }), // Exclude image for faster initial load
         fetch(`${API_URL}/claims`, { headers }),
-        fetch(`${API_URL}/support`, { headers })
+        fetch(`${API_URL}/support`, { headers }),
+        fetch(`${API_URL}/admin/stats`, { headers })
       ]);
-
-      if (!itemsRes.ok || !claimsRes.ok || !ticketsRes.ok) {
-        throw new Error('Failed to fetch data');
-      }
+      
+      if (!itemsRes.ok || !claimsRes.ok || !supportRes.ok || !statsRes.ok) throw new Error('Failed to fetch data');
 
       const itemsData = await itemsRes.json();
       const claimsData = await claimsRes.json();
-      const ticketsData = await ticketsRes.json();
+      const supportData = await supportRes.json();
+      const statsData = await statsRes.json();
 
       setItems(itemsData);
       setClaimRecords(claimsData);
-      setSupportTickets(ticketsData);
+      setSupportTickets(supportData);
+      setAnalytics({
+        pendingApprovals: statsData.items.pending || 0,
+        totalClaims: statsData.totalClaims || 0,
+        openTickets: statsData.tickets.open || 0,
+        resolvedTickets: statsData.tickets.resolved || 0,
+      });
+
+      // Cache for next time
+      localStorage.setItem('admin_stats_cache', JSON.stringify({
+        pendingApprovals: statsData.items.pending || 0,
+        totalClaims: statsData.totalClaims || 0,
+        openTickets: statsData.tickets.open || 0,
+        resolvedTickets: statsData.tickets.resolved || 0,
+        lastUpdated: new Date()
+      }));
+      localStorage.setItem('admin_items_cache', JSON.stringify(itemsData));
+
       setLoading(false);
     } catch (err) {
       setError(err.message);
@@ -223,6 +249,35 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       alert('Error updating item');
+    }
+  };
+
+  const handleSendClaimMessage = async (e) => {
+    e.preventDefault();
+    if (!askMessage.trim()) return;
+
+    try {
+      const token = userInfo?.token;
+      const response = await fetch(`${API_URL}/claims/${editingClaim._id}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ text: askMessage }),
+      });
+
+      if (response.ok) {
+        const updatedClaim = await response.json();
+        // Update the claim in the local list to show the new message
+        setClaimRecords(claimRecords.map(c => c._id === updatedClaim._id ? { ...c, messages: updatedClaim.messages } : c));
+        setEditingClaim({ ...editingClaim, messages: updatedClaim.messages });
+        setAskMessage('');
+      } else {
+        alert('Failed to send message');
+      }
+    } catch (err) {
+      alert('Error sending message');
     }
   };
 
@@ -442,7 +497,22 @@ const AdminDashboard = () => {
     { label: 'Resolved Tickets', value: analytics.resolvedTickets.toString(), icon: <FiCheckCircle />, color: 'green' },
   ];
 
-  if (loading) return <div className="container" style={{padding: '100px 0'}}>Loading dashboard...</div>;
+  if (loading) return (
+    <div className="admin-page" style={{padding: '100px 0'}}>
+      <div className="container">
+        <header className="page-header">
+          <div className="skeleton" style={{width: '300px', height: '40px', marginBottom: '10px'}}></div>
+          <div className="skeleton" style={{width: '200px', height: '20px'}}></div>
+        </header>
+        <div className="stats-grid">
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className="stat-card skeleton" style={{height: '100px'}}></div>
+          ))}
+        </div>
+        <div className="skeleton" style={{width: '100%', height: '500px', marginTop: '40px', borderRadius: '12px'}}></div>
+      </div>
+    </div>
+  );
   if (error) return <div className="container">Error: {error}</div>;
 
   return (
@@ -781,6 +851,37 @@ const AdminDashboard = () => {
               <button className="close-btn" onClick={() => setShowClaimModal(false)}><FiX /></button>
             </div>
             <form onSubmit={handleUpdateClaimStatus}>
+              <div className="chat-section" style={{marginBottom: '20px', background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0'}}>
+                <h3 style={{fontSize: '0.9rem', marginBottom: '10px', color: '#475569'}}>One-to-One Verification Chat</h3>
+                <div className="message-history" style={{maxHeight: '200px', overflowY: 'auto', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                  {editingClaim.messages && editingClaim.messages.length > 0 ? editingClaim.messages.map((msg, idx) => (
+                    <div key={idx} style={{
+                      alignSelf: msg.sender?.role === 'admin' || msg.sender === userInfo._id ? 'flex-end' : 'flex-start',
+                      background: msg.sender?.role === 'admin' || msg.sender === userInfo._id ? '#3b82f6' : '#e2e8f0',
+                      color: msg.sender?.role === 'admin' || msg.sender === userInfo._id ? 'white' : 'black',
+                      padding: '8px 12px',
+                      borderRadius: '12px',
+                      maxWidth: '80%',
+                      fontSize: '0.85rem'
+                    }}>
+                      <div style={{fontSize: '0.7rem', opacity: 0.8, marginBottom: '2px'}}>{msg.sender?.name || (msg.sender?.role === 'admin' ? 'Admin' : 'User')}</div>
+                      {msg.text}
+                    </div>
+                  )) : <p style={{fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic'}}>No messages yet. Ask the user a question to verify the claim.</p>}
+                </div>
+                <div style={{display: 'flex', gap: '8px'}}>
+                  <textarea 
+                    value={askMessage} 
+                    onChange={(e)=>setAskMessage(e.target.value)} 
+                    placeholder="Ask user for details (e.g. Serial number, specific marks)..."
+                    style={{flex: 1, minHeight: '60px', padding: '10px', fontSize: '0.85rem'}}
+                  ></textarea>
+                  <button type="button" onClick={handleSendClaimMessage} className="btn btn-primary" style={{alignSelf: 'flex-end', height: 'fit-content'}} disabled={!askMessage.trim()}>
+                    <FiSend />
+                  </button>
+                </div>
+              </div>
+
               <div className="form-group">
                 <label>Claim Status</label>
                 <select value={editingClaim.status} onChange={(e)=>setEditingClaim({...editingClaim, status: e.target.value.toLowerCase()})}>
@@ -790,15 +891,7 @@ const AdminDashboard = () => {
                 </select>
               </div>
               <div className="form-group">
-                <label>Instructions or Questions for Claimant (Visible to User)</label>
-                <textarea 
-                  value={editingClaim.adminReply || ''} 
-                  onChange={(e)=>setEditingClaim({...editingClaim, adminReply: e.target.value})}
-                  placeholder="Ask questions or give instructions for collection..."
-                ></textarea>
-              </div>
-              <div className="form-group">
-                <label>Collection Time Slot (Visible to User)</label>
+                <label>Collection Time Slot (Visible to User after Approval)</label>
                 <input 
                   type="text"
                   value={editingClaim.collectionTime || ''} 

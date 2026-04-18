@@ -8,16 +8,54 @@ const UserDashboard = () => {
   const [items, setItems] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [myClaims, setMyClaims] = useState([]);
+  const [replyMessages, setReplyMessages] = useState({}); // {claimId: message}
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all' or 'found'
   const navigate = useNavigate();
   const userInfo = JSON.parse(localStorage.getItem('userInfo'));
 
+  const handleSendReply = async (claimId) => {
+    const text = replyMessages[claimId];
+    if (!text?.trim()) return;
+
+    try {
+      const token = userInfo?.token;
+      const response = await fetch(`${API_URL}/claims/${claimId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (response.ok) {
+        const updatedClaim = await response.json();
+        setMyClaims(myClaims.map(c => c._id === updatedClaim._id ? { ...c, messages: updatedClaim.messages } : c));
+        setReplyMessages({ ...replyMessages, [claimId]: '' });
+      } else {
+        alert('Failed to send reply');
+      }
+    } catch (err) {
+      alert('Error sending reply');
+    }
+  };
+
   useEffect(() => {
     if (!userInfo) {
       navigate('/login');
       return;
+    }
+
+    // Load cached data for instant feel
+    const cachedData = localStorage.getItem(`dashboard_cache_${userInfo._id}`);
+    if (cachedData) {
+      const { items, notifications, myClaims } = JSON.parse(cachedData);
+      setItems(items);
+      setNotifications(notifications);
+      setMyClaims(myClaims);
+      setLoading(false); // Can skip loading state if cache exists
     }
 
     const fetchData = async () => {
@@ -50,7 +88,16 @@ const UserDashboard = () => {
         setItems(itemsData);
         setNotifications(notifData);
         // Only show my claims
-        setMyClaims(claimsData.filter(c => c.claimantId?._id === userInfo._id || c.claimantId === userInfo._id));
+        const processedClaims = claimsData.filter(c => c.claimantId?._id === userInfo._id || c.claimantId === userInfo._id);
+        setMyClaims(processedClaims);
+        
+        // Cache data for next time
+        localStorage.setItem(`dashboard_cache_${userInfo._id}`, JSON.stringify({
+          items: itemsData,
+          notifications: notifData,
+          myClaims: processedClaims
+        }));
+
         setLoading(false);
       } catch (err) {
         setError(err.message);
@@ -113,7 +160,22 @@ const UserDashboard = () => {
     { label: 'My Claims', value: claimedByMe.length.toString(), icon: <FiAward />, color: 'purple' },
   ];
 
-  if (loading) return <div className="container" style={{padding: '100px 0'}}>Loading your dashboard...</div>;
+  if (loading) return (
+    <div className="admin-page" style={{padding: '100px 0'}}>
+      <div className="container">
+        <header className="page-header">
+          <div className="skeleton" style={{width: '300px', height: '40px', marginBottom: '10px'}}></div>
+          <div className="skeleton" style={{width: '200px', height: '20px'}}></div>
+        </header>
+        <div className="stats-grid">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="stat-card skeleton" style={{height: '100px'}}></div>
+          ))}
+        </div>
+        <div className="skeleton" style={{width: '100%', height: '400px', marginTop: '40px', borderRadius: '12px'}}></div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="admin-page fade-in">
@@ -341,12 +403,49 @@ const UserDashboard = () => {
                         <span className={`status-pill ${claim.status.toLowerCase()}`}>
                           {claim.status}
                         </span>
-                        {claim.adminReply && (
-                          <div style={{fontSize: '0.8rem', color: '#1e40af', marginTop: '5px', background: '#eff6ff', padding: '5px', borderRadius: '4px'}}>
-                            <strong>Admin:</strong> {claim.adminReply}
+                        
+                        {/* Chat History */}
+                        {claim.messages && claim.messages.length > 0 && (
+                          <div style={{marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px'}}>
+                            {claim.messages.map((msg, idx) => (
+                              <div key={idx} style={{
+                                alignSelf: msg.sender?._id === userInfo._id || msg.sender === userInfo._id ? 'flex-end' : 'flex-start',
+                                background: msg.sender?._id === userInfo._id || msg.sender === userInfo._id ? '#3b82f6' : '#f1f5f9',
+                                color: msg.sender?._id === userInfo._id || msg.sender === userInfo._id ? 'white' : '#475569',
+                                padding: '5px 10px',
+                                borderRadius: '10px',
+                                fontSize: '0.75rem',
+                                maxWidth: '90%'
+                              }}>
+                                <strong>{msg.sender?._id === userInfo._id || msg.sender === userInfo._id ? 'Me: ' : 'Admin: '}</strong>
+                                {msg.text}
+                              </div>
+                            ))}
                           </div>
                         )}
-                        {claim.collectionTime && (
+
+                        {/* Reply Input */}
+                        {claim.status === 'pending' && (
+                          <div style={{marginTop: '10px', display: 'flex', gap: '5px'}}>
+                            <input 
+                              type="text" 
+                              placeholder="Reply to admin..." 
+                              value={replyMessages[claim._id] || ''}
+                              onChange={(e) => setReplyMessages({...replyMessages, [claim._id]: e.target.value})}
+                              style={{flex: 1, padding: '5px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid #e2e8f0'}}
+                            />
+                            <button 
+                              onClick={() => handleSendReply(claim._id)} 
+                              className="btn btn-primary" 
+                              style={{padding: '5px 10px', fontSize: '0.75rem'}}
+                              disabled={!replyMessages[claim._id]?.trim()}
+                            >
+                              <FiSend />
+                            </button>
+                          </div>
+                        )}
+
+                        {claim.collectionTime && claim.status === 'approved' && (
                           <div style={{fontSize: '0.8rem', color: '#047857', marginTop: '5px', background: '#ecfdf5', padding: '5px', borderRadius: '4px'}}>
                             <strong>Slot:</strong> {claim.collectionTime}
                           </div>

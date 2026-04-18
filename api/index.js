@@ -94,13 +94,19 @@ const itemSchema = new mongoose.Schema({
 });
 
 const claimRecordSchema = new mongoose.Schema({
-  item: { type: mongoose.Schema.Types.ObjectId, ref: 'Item', required: true },
-  claimedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  item: { type: mongoose.Schema.Types.ObjectId, ref: 'Item', required: true, index: true },
+  claimedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending', index: true },
   adminNotes: { type: String },
-  adminReply: { type: String }, // For instructions or questions to the claimant
-  collectionTime: { type: String }, // Time slot for collection
-  createdAt: { type: Date, default: Date.now }
+  collectionTime: { type: String },
+  messages: [
+    {
+      sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      text: { type: String, required: true },
+      createdAt: { type: Date, default: Date.now }
+    }
+  ],
+  createdAt: { type: Date, default: Date.now, index: true }
 });
 
 const supportTicketSchema = new mongoose.Schema({
@@ -114,13 +120,13 @@ const supportTicketSchema = new mongoose.Schema({
 });
 
 const notificationSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   title: { type: String },
   message: { type: String, required: true },
   type: { type: String, enum: ['info', 'success', 'warning', 'error', 'admin_message'], default: 'info' },
   relatedItemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Item' },
-  isRead: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now }
+  isRead: { type: Boolean, default: false, index: true },
+  createdAt: { type: Date, default: Date.now, index: true }
 });
 
 const User = mongoose.model('User', userSchema);
@@ -183,29 +189,63 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/items', async (req, res) => {
   try {
-    const { isAdmin, userId } = req.query;
+    const { status, category, userId, isAdmin, excludeImage } = req.query;
     let query = {};
     
-    if (userId) {
-      query.reportedBy = userId;
-    }
-    
-    // Show approved items OR items reported by the current user
     if (isAdmin !== 'true') {
+      const publicQuery = { isApproved: true };
       if (userId) {
-        query.$or = [
-          { isApproved: true },
-          { reportedBy: userId }
-        ];
+        query = { $or: [publicQuery, { reportedBy: userId }] };
       } else {
-        query.isApproved = true;
+        query = publicQuery;
       }
     }
     
-    const items = await Item.find(query).populate('reportedBy', 'name email').sort({ createdAt: -1 });
+    if (status) query.status = status.toLowerCase();
+    if (category) query.category = category;
+
+    // Use projection to exclude heavy image data if requested
+    const projection = excludeImage === 'true' ? { imageUrl: 0 } : {};
+
+    const items = await Item.find(query, projection)
+      .populate('reportedBy', 'name email')
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(items);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating item', error: error.message });
+    res.status(500).json({ message: 'Error fetching items', error: error.message });
+  }
+});
+
+app.get('/api/admin/stats', protect, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const [itemStats, claimStats, ticketStats] = await Promise.all([
+      Item.aggregate([
+        { $group: { _id: "$status", count: { $sum: 1 } } }
+      ]),
+      ClaimRecord.aggregate([
+        { $group: { _id: "$status", count: { $sum: 1 } } }
+      ]),
+      SupportTicket.aggregate([
+        { $group: { _id: "$status", count: { $sum: 1 } } }
+      ])
+    ]);
+
+    const stats = {
+      items: itemStats.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {}),
+      claims: claimStats.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {}),
+      tickets: ticketStats.reduce((acc, curr) => ({ ...acc, [curr._id]: curr.count }), {}),
+      totalReports: await Item.countDocuments(),
+      totalClaims: await ClaimRecord.countDocuments()
+    };
+
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching stats', error: error.message });
   }
 });
 
@@ -298,7 +338,9 @@ app.get('/api/claims', protect, async (req, res) => {
         populate: { path: 'reportedBy', select: 'name email' }
       })
       .populate('claimedBy', 'name email')
-      .sort({ createdAt: -1 });
+      .populate('messages.sender', 'name role')
+      .sort({ createdAt: -1 })
+      .lean();
 
     // Map fields to match what frontend expects
     const mappedClaims = claims.map(claim => {
@@ -345,6 +387,40 @@ app.put('/api/claims/:id', protect, async (req, res) => {
     res.json(claim);
   } catch (error) {
     res.status(500).json({ message: 'Error updating claim', error: error.message });
+  }
+});
+
+app.post('/api/claims/:id/messages', protect, async (req, res) => {
+  try {
+    const claim = await ClaimRecord.findById(req.params.id);
+    if (!claim) return res.status(404).json({ message: 'Claim not found' });
+
+    const newMessage = {
+      sender: req.user._id,
+      text: req.body.text
+    };
+
+    claim.messages.push(newMessage);
+    await claim.save();
+
+    // Notify the other party
+    const isSenderAdmin = req.user.role === 'admin';
+    const recipientId = isSenderAdmin ? claim.claimedBy : claim.reportedBy; 
+    // Actually, if user sent, we don't necessarily need to notify admin unless we have an admin dashboard notification system.
+    
+    if (isSenderAdmin) {
+      await new Notification({
+        user: claim.claimedBy,
+        title: 'New message from Admin',
+        message: `Admin asked a question about your claim on: ${claim.item?.title || 'Item'}`,
+        type: 'info',
+        relatedItemId: claim.item
+      }).save();
+    }
+
+    res.status(201).json(claim);
+  } catch (error) {
+    res.status(500).json({ message: 'Error sending message', error: error.message });
   }
 });
 
@@ -489,10 +565,12 @@ app.get('/api/notifications', protect, async (req, res) => {
     const { userId } = req.query;
     const query = userId ? { user: userId } : { user: req.user._id };
     const notifications = await Notification.find(query)
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean();
     res.json(notifications);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating item', error: error.message });
+    res.status(500).json({ message: 'Error fetching notifications', error: error.message });
   }
 });
 
