@@ -15,7 +15,7 @@ const ReportItem = () => {
     category: 'Electronics',
     location: '',
     date: new Date().toISOString().split('T')[0],
-    status: defaultStatus.charAt(0).toUpperCase() + defaultStatus.slice(1),
+    status: defaultStatus.toLowerCase(),
     contactInfo: '',
     imageUrl: ''
   });
@@ -161,15 +161,15 @@ const ReportItem = () => {
             <div className="toggle-container">
               <button 
                 type="button" 
-                className={`toggle-btn ${formData.status === 'Lost' ? 'active lost' : ''}`}
-                onClick={() => setFormData({...formData, status: 'Lost'})}
+                className={`toggle-btn ${formData.status === 'lost' ? 'active lost' : ''}`}
+                onClick={() => setFormData({...formData, status: 'lost'})}
               >
                 Lost Item
               </button>
               <button 
                 type="button" 
-                className={`toggle-btn ${formData.status === 'Found' ? 'active found' : ''}`}
-                onClick={() => setFormData({...formData, status: 'Found'})}
+                className={`toggle-btn ${formData.status === 'found' ? 'active found' : ''}`}
+                onClick={() => setFormData({...formData, status: 'found'})}
               >
                 Found Item
               </button>
