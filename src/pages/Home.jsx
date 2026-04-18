@@ -85,7 +85,7 @@ const Home = () => {
 
     const matchesSearch = item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || (item.status && item.status.toLowerCase() === statusFilter.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
     
     let matchesDateRange = true;
