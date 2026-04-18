@@ -783,14 +783,31 @@ const AdminDashboard = () => {
             <form onSubmit={handleUpdateClaimStatus}>
               <div className="form-group">
                 <label>Claim Status</label>
-                <select value={editingClaim.status} onChange={(e)=>setEditingClaim({...editingClaim, status: e.target.value})}>
-                  <option value="Pending">Pending</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Rejected">Rejected</option>
+                <select value={editingClaim.status} onChange={(e)=>setEditingClaim({...editingClaim, status: e.target.value.toLowerCase()})}>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
                 </select>
               </div>
               <div className="form-group">
-                <label>Admin Internal Notes</label>
+                <label>Instructions or Questions for Claimant (Visible to User)</label>
+                <textarea 
+                  value={editingClaim.adminReply || ''} 
+                  onChange={(e)=>setEditingClaim({...editingClaim, adminReply: e.target.value})}
+                  placeholder="Ask questions or give instructions for collection..."
+                ></textarea>
+              </div>
+              <div className="form-group">
+                <label>Collection Time Slot (Visible to User)</label>
+                <input 
+                  type="text"
+                  value={editingClaim.collectionTime || ''} 
+                  onChange={(e)=>setEditingClaim({...editingClaim, collectionTime: e.target.value})}
+                  placeholder="e.g. Monday 10:00 AM at Guard Gate"
+                />
+              </div>
+              <div className="form-group">
+                <label>Admin Internal Notes (Private)</label>
                 <textarea 
                   value={editingClaim.adminNotes || ''} 
                   onChange={(e)=>setEditingClaim({...editingClaim, adminNotes: e.target.value})}

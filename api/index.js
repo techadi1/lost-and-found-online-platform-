@@ -98,6 +98,8 @@ const claimRecordSchema = new mongoose.Schema({
   claimedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   adminNotes: { type: String },
+  adminReply: { type: String }, // For instructions or questions to the claimant
+  collectionTime: { type: String }, // Time slot for collection
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -113,8 +115,10 @@ const supportTicketSchema = new mongoose.Schema({
 
 const notificationSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  title: { type: String },
   message: { type: String, required: true },
-  type: { type: String, enum: ['info', 'success', 'warning', 'error'], default: 'info' },
+  type: { type: String, enum: ['info', 'success', 'warning', 'error', 'admin_message'], default: 'info' },
+  relatedItemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Item' },
   isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
@@ -260,33 +264,57 @@ app.post('/api/items/:id/claim', protect, async (req, res) => {
     const item = await Item.findById(req.params.id);
     if (!item) return res.status(404).json({ message: 'Item not found' });
     
-    // Only allow claims on found items
-    if (item.status !== 'found') {
+    if (item.status && item.status.toLowerCase() !== 'found') {
       return res.status(400).json({ message: 'Only found items can be claimed' });
     }
     
-    // Allow multiple claims - remove the existing claim check
     const claim = new ClaimRecord({
       item: req.params.id,
       claimedBy: req.user._id,
       status: 'pending'
     });
     await claim.save();
+
+    // Create a notification for the reporter
+    await new Notification({
+      user: item.reportedBy,
+      title: 'New Claim Request',
+      message: `Someone has requested to claim: ${item.title}`,
+      type: 'info',
+      relatedItemId: item._id
+    }).save();
+
     res.status(201).json(claim);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating item', error: error.message });
+    res.status(500).json({ message: 'Error creating claim', error: error.message });
   }
 });
 
 app.get('/api/claims', protect, async (req, res) => {
   try {
     const claims = await ClaimRecord.find()
-      .populate('item', 'title description')
+      .populate({
+        path: 'item',
+        populate: { path: 'reportedBy', select: 'name email' }
+      })
       .populate('claimedBy', 'name email')
       .sort({ createdAt: -1 });
-    res.json(claims);
+
+    // Map fields to match what frontend expects
+    const mappedClaims = claims.map(claim => {
+      const plainClaim = claim.toPlainObject ? claim.toPlainObject() : JSON.parse(JSON.stringify(claim));
+      return {
+        ...plainClaim,
+        itemId: plainClaim.item,
+        claimantId: plainClaim.claimedBy,
+        reporterId: plainClaim.item?.reportedBy,
+        claimDate: plainClaim.createdAt // Alias for frontend
+      };
+    });
+
+    res.json(mappedClaims);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating item', error: error.message });
+    res.status(500).json({ message: 'Error fetching claims', error: error.message });
   }
 });
 
@@ -296,14 +324,27 @@ app.put('/api/claims/:id', protect, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
     
-    const claim = await ClaimRecord.findById(req.params.id);
+    const claim = await ClaimRecord.findById(req.params.id).populate('item');
     if (!claim) return res.status(404).json({ message: 'Claim not found' });
     
+    const oldStatus = claim.status;
     Object.assign(claim, req.body);
     await claim.save();
+
+    // Notify user if status changed or admin replied
+    if (req.body.status || req.body.adminReply || req.body.collectionTime) {
+      await new Notification({
+        user: claim.claimedBy,
+        title: `Update on Claim: ${claim.item?.title || 'Item'}`,
+        message: `Status: ${claim.status}. ${claim.adminReply || ''}. ${claim.collectionTime ? 'Collection Slot: ' + claim.collectionTime : ''}`,
+        type: claim.status === 'approved' ? 'success' : 'info',
+        relatedItemId: claim.item?._id
+      }).save();
+    }
+
     res.json(claim);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating item', error: error.message });
+    res.status(500).json({ message: 'Error updating claim', error: error.message });
   }
 });
 
@@ -328,7 +369,7 @@ app.get('/api/tickets', protect, async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(tickets);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating item', error: error.message });
+    res.status(500).json({ message: 'Error fetching tickets', error: error.message });
   }
 });
 
@@ -457,14 +498,15 @@ app.get('/api/notifications', protect, async (req, res) => {
 
 app.post('/api/notifications', protect, async (req, res) => {
   try {
-    const notification = new Notification({
+    const notificationData = {
       ...req.body,
-      user: req.user._id
-    });
+      user: req.body.userId || req.body.user || req.user._id
+    };
+    const notification = new Notification(notificationData);
     await notification.save();
     res.status(201).json(notification);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating item', error: error.message });
+    res.status(500).json({ message: 'Error creating notification', error: error.message });
   }
 });
 
