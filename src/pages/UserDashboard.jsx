@@ -318,7 +318,7 @@ const UserDashboard = () => {
                         <div className="item-cell">
                           {item.imageUrl && (
                             <img 
-                              src={item.imageUrl.startsWith('/uploads/') ? `http://localhost:5001${item.imageUrl}` : item.imageUrl} 
+                              src={item.imageUrl.startsWith('/uploads/') ? `${API_BASE_URL}${item.imageUrl}` : item.imageUrl} 
                               alt="" 
                               className="item-thumb" 
                             />

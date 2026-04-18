@@ -27,11 +27,15 @@ app.use(cors());
 app.use(express.json());
 app.use(async (req, res, next) => {
   try {
+    if (!process.env.MONGODB_URI) {
+      throw new Error("MONGODB_URI environment variable is not defined");
+    }
     if (mongoose.connection.readyState !== 1) {
       await mongoose.connect(process.env.MONGODB_URI);
     }
     next();
   } catch (err) {
+    console.error("Database middleware error:", err.message);
     res.status(500).json({ message: "Database connection failed", error: err.message });
   }
 });
@@ -51,7 +55,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api/uploads', express.static(uploadsDir));
+app.use('/uploads', express.static(uploadsDir));
 
 // MongoDB connection
 const connectDB = async () => {
@@ -516,23 +521,8 @@ const connect = async () => {
   }
 };
 
-// Start server
-const PORT = process.env.PORT || 3000;
-
-// For Vercel serverless deployment
-if (process.env.NODE_ENV === 'production') {
-  connect().then(() => {
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  });
-} else {
-  connect().then(() => {
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  });
-}
+// Connect to database before handling requests
+connect().catch(err => console.error("Initial connection error:", err));
 
 // Vercel serverless export
 export default app;
