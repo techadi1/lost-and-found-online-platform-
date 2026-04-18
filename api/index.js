@@ -159,7 +159,7 @@ app.post('/api/auth/register', async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
     res.status(201).json({ ...user.toObject(), password: undefined, token });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -173,7 +173,7 @@ app.post('/api/auth/login', async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
     res.json({ ...user.toObject(), password: undefined, token });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -194,7 +194,7 @@ app.get('/api/items', async (req, res) => {
     const items = await Item.find(query).populate('reportedBy', 'name email').sort({ createdAt: -1 });
     res.json(items);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -211,7 +211,7 @@ app.post('/api/items', protect, upload.single('image'), async (req, res) => {
     await item.save();
     res.status(201).json(item);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error processing item report', error: error.message });
   }
 });
 
@@ -228,7 +228,7 @@ app.put('/api/items/:id', protect, async (req, res) => {
     await item.save();
     res.json(item);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -244,7 +244,7 @@ app.delete('/api/items/:id', protect, async (req, res) => {
     await item.deleteOne();
     res.json({ message: 'Item removed' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -267,7 +267,7 @@ app.post('/api/items/:id/claim', protect, async (req, res) => {
     await claim.save();
     res.status(201).json(claim);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -279,7 +279,7 @@ app.get('/api/claims', protect, async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(claims);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -296,7 +296,7 @@ app.put('/api/claims/:id', protect, async (req, res) => {
     await claim.save();
     res.json(claim);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -309,7 +309,7 @@ app.delete('/api/claims/:id', protect, async (req, res) => {
     await ClaimRecord.findByIdAndDelete(req.params.id);
     res.json({ message: 'Claim removed' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -321,7 +321,7 @@ app.get('/api/tickets', protect, async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(tickets);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -334,7 +334,7 @@ app.post('/api/tickets', protect, async (req, res) => {
     await ticket.save();
     res.status(201).json(ticket);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -351,7 +351,7 @@ app.put('/api/tickets/:id', protect, async (req, res) => {
     await ticket.save();
     res.json(ticket);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -364,7 +364,7 @@ app.delete('/api/tickets/:id', protect, async (req, res) => {
     await SupportTicket.findByIdAndDelete(req.params.id);
     res.json({ message: 'Ticket removed' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -377,7 +377,7 @@ app.get('/api/support', protect, async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(tickets);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -389,7 +389,7 @@ app.get('/api/support/user/:userId', protect, async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(tickets);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -402,7 +402,7 @@ app.post('/api/support', protect, async (req, res) => {
     await ticket.save();
     res.status(201).json(ticket);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -419,7 +419,7 @@ app.put('/api/support/:id', protect, async (req, res) => {
     await ticket.save();
     res.json(ticket);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -432,7 +432,7 @@ app.delete('/api/support/:id', protect, async (req, res) => {
     await SupportTicket.findByIdAndDelete(req.params.id);
     res.json({ message: 'Ticket removed' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -444,7 +444,7 @@ app.get('/api/notifications', protect, async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(notifications);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -457,7 +457,7 @@ app.post('/api/notifications', protect, async (req, res) => {
     await notification.save();
     res.status(201).json(notification);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -474,7 +474,7 @@ app.put('/api/notifications/:id', protect, async (req, res) => {
     await notification.save();
     res.json(notification);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
@@ -491,7 +491,7 @@ app.put('/api/notifications/:id/read', protect, async (req, res) => {
     await notification.save();
     res.json(notification);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Error creating item', error: error.message });
   }
 });
 
