@@ -82,7 +82,7 @@ const ItemCard = ({ item, onClaim }) => {
         )}
 
         <div className="item-actions-footer" style={{display: 'flex', gap: '10px', marginTop: '1.5rem'}}>
-          {item.status === 'Found' && (
+          {item.status && item.status.toLowerCase() === 'found' && (
             <button 
               className="btn btn-primary claim-btn" 
               style={{
@@ -97,7 +97,7 @@ const ItemCard = ({ item, onClaim }) => {
               {userInfo && (item.reportedBy?._id === userInfo._id || item.reportedBy === userInfo._id || item.userId?._id === userInfo._id || item.userId === userInfo._id) ? 'Cannot Claim Own Item' : 'Claim Item'}
             </button>
           )}
-          {item.status === 'Lost' && (
+          {item.status && item.status.toLowerCase() === 'lost' && (
             <div style={{flex: 1, textAlign: 'center', padding: '10px', background: '#f1f5f9', borderRadius: '8px', color: '#64748b', fontSize: '0.9rem', fontWeight: '500'}}>
               Lost Item (Not Claimable)
             </div>

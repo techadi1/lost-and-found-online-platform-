@@ -96,8 +96,8 @@ const UserDashboard = () => {
     }
   };
 
-  const activeItems = items.filter(i => i.status !== 'Claimed' && (i.reportedBy?._id === userInfo._id || i.reportedBy === userInfo._id));
-  const claimedByMe = items.filter(i => i.status === 'Claimed' && i.claimedBy === userInfo._id);
+  const activeItems = items.filter(i => i.status && i.status.toLowerCase() !== 'claimed' && (i.reportedBy?._id === userInfo._id || i.reportedBy === userInfo._id));
+  const claimedByMe = items.filter(i => i.status && i.status.toLowerCase() === 'claimed' && i.claimedBy === userInfo._id);
   
   const filteredItems = filter === 'found' ? activeItems.filter(i => i.status.toLowerCase() === 'found') : activeItems;
 
