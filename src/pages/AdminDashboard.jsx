@@ -109,7 +109,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const analytics = {
+  const dashboardStats = {
     totalItems: items.length,
     pendingApprovals: items.filter(i => !i.isApproved).length,
     approvedItems: items.filter(i => i.isApproved).length,
@@ -497,10 +497,10 @@ const AdminDashboard = () => {
   ];
 
   const analyticsStats = [
-    { label: 'Pending Approvals', value: analytics.pendingApprovals.toString(), icon: <FiClock />, color: 'orange' },
-    { label: 'Total Claims', value: analytics.totalClaims.toString(), icon: <FiAward />, color: 'purple' },
-    { label: 'Open Tickets', value: analytics.openTickets.toString(), icon: <FiInfo />, color: 'red' },
-    { label: 'Resolved Tickets', value: analytics.resolvedTickets.toString(), icon: <FiCheckCircle />, color: 'green' },
+    { label: 'Pending Approvals', value: (analytics?.pendingApprovals || 0).toString(), icon: <FiClock />, color: 'orange' },
+    { label: 'Total Claims', value: (analytics?.totalClaims || 0).toString(), icon: <FiAward />, color: 'purple' },
+    { label: 'Open Tickets', value: (analytics?.openTickets || 0).toString(), icon: <FiInfo />, color: 'red' },
+    { label: 'Resolved Tickets', value: (analytics?.resolvedTickets || 0).toString(), icon: <FiCheckCircle />, color: 'green' },
   ];
 
   if (loading) return (
