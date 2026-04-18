@@ -859,7 +859,7 @@ const AdminDashboard = () => {
             </div>
             <form onSubmit={handleAskUser}>
               <div className="form-group">
-                <label>Question for {targetItem.userId?.name || 'User'}</label>
+                <label>Question for {targetItem.reportedBy?.name || 'User'}</label>
                 <textarea 
                   value={askMessage} 
                   onChange={(e)=>setAskMessage(e.target.value)}
