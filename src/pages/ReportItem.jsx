@@ -102,29 +102,36 @@ const ReportItem = () => {
     setLoading(true);
     setError(null);
 
-    const submissionData = new FormData();
-    Object.keys(formData).forEach(key => {
-      submissionData.append(key, formData[key]);
-    });
-    // Send both userId and reportedBy for compatibility with different backend models
-    submissionData.append('userId', userInfo?._id);
-    submissionData.append('reportedBy', userInfo?._id);
-    
-    if (selectedImage) {
-      submissionData.append('image', selectedImage);
-    }
-
     try {
       const token = userInfo?.token;
       
+      // Convert image to Base64 if selected
+      let base64Image = '';
+      if (selectedImage) {
+        base64Image = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(selectedImage);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = error => reject(error);
+        });
+      }
+
+      const submissionData = {
+        ...formData,
+        status: formData.status.toLowerCase(),
+        reportedBy: userInfo?._id,
+        userId: userInfo?._id,
+        imageUrl: base64Image
+      };
+
       const response = await fetch(`${API_URL}/items`, {
         method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
           ...(token && { 'Authorization': `Bearer ${token}` })
         },
-        body: submissionData,
+        body: JSON.stringify(submissionData),
       });
-
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

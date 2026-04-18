@@ -84,11 +84,11 @@ const AdminDashboard = () => {
     lostItems: items.filter(i => i.status.toLowerCase() === 'lost').length,
     foundItems: items.filter(i => i.status.toLowerCase() === 'found').length,
     totalClaims: claimRecords.length,
-    pendingClaims: claimRecords.filter(c => c.status === 'pending').length,
-    approvedClaims: claimRecords.filter(c => c.status === 'approved').length,
+    pendingClaims: claimRecords.filter(c => c.status.toLowerCase() === 'pending').length,
+    approvedClaims: claimRecords.filter(c => c.status.toLowerCase() === 'approved').length,
     totalTickets: supportTickets.length,
-    openTickets: supportTickets.filter(t => t.status === 'Open').length,
-    resolvedTickets: supportTickets.filter(t => t.status === 'Resolved').length,
+    openTickets: supportTickets.filter(t => t.status.toLowerCase() === 'open').length,
+    resolvedTickets: supportTickets.filter(t => t.status.toLowerCase() === 'resolved').length,
   };
 
   const handleApproveItem = async (id) => {
@@ -315,7 +315,7 @@ const AdminDashboard = () => {
 
   const handleAskUser = async (e) => {
     e.preventDefault();
-    if (!targetItem?.userId?._id) return;
+    if (!targetItem?.reportedBy?._id) return;
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       const token = userInfo?.token;
@@ -327,7 +327,7 @@ const AdminDashboard = () => {
           ...(token && { 'Authorization': `Bearer ${token}` })
         },
         body: JSON.stringify({
-          userId: targetItem.userId._id,
+          userId: targetItem.reportedBy._id,
           title: `Admin Question: ${targetItem.title}`,
           message: askMessage,
           type: 'admin_message',
@@ -565,7 +565,7 @@ const AdminDashboard = () => {
                           <span>{item.title}</span>
                         </div>
                       </td>
-                      <td>{item.userId?.name || 'Unknown'}</td>
+                      <td>{item.reportedBy?.name || 'Unknown'}</td>
                       <td><span className={`status-pill ${item.status.toLowerCase()}`}>{item.status}</span></td>
                       <td>
                         <span className={`status-pill ${item.isApproved ? 'approved' : 'pending'}`}>
@@ -631,7 +631,7 @@ const AdminDashboard = () => {
                 <tbody>
                   {supportTickets.length > 0 ? supportTickets.map(ticket => (
                     <tr key={ticket._id}>
-                      <td>{ticket.userId?.name || 'Unknown'}</td>
+                      <td>{ticket.user?.name || 'Unknown'}</td>
                       <td>{ticket.subject}</td>
                       <td>{ticket.relatedItemId?.title || 'None'}</td>
                       <td>

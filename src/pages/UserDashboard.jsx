@@ -96,15 +96,15 @@ const UserDashboard = () => {
     }
   };
 
-  const activeItems = items.filter(i => i.status !== 'Claimed' && i.userId?._id === userInfo._id);
+  const activeItems = items.filter(i => i.status !== 'Claimed' && (i.reportedBy?._id === userInfo._id || i.reportedBy === userInfo._id));
   const claimedByMe = items.filter(i => i.status === 'Claimed' && i.claimedBy === userInfo._id);
   
   const filteredItems = filter === 'found' ? activeItems.filter(i => i.status.toLowerCase() === 'found') : activeItems;
 
   const stats = [
     { label: 'My Reports', value: activeItems.length.toString(), icon: <FiBox />, color: 'blue' },
-    { label: 'Found Items', value: activeItems.filter(i => i.status === 'Found').length.toString(), icon: <FiCheckCircle />, color: 'green' },
-    { label: 'Lost Items', value: activeItems.filter(i => i.status === 'Lost').length.toString(), icon: <FiClock />, color: 'orange' },
+    { label: 'Found Items', value: activeItems.filter(i => i.status.toLowerCase() === 'found').length.toString(), icon: <FiCheckCircle />, color: 'green' },
+    { label: 'Lost Items', value: activeItems.filter(i => i.status.toLowerCase() === 'lost').length.toString(), icon: <FiClock />, color: 'orange' },
     { label: 'My Claims', value: claimedByMe.length.toString(), icon: <FiAward />, color: 'purple' },
   ];
 

@@ -186,9 +186,16 @@ app.get('/api/items', async (req, res) => {
       query.reportedBy = userId;
     }
     
-    // Only show approved items to non-admin users
+    // Show approved items OR items reported by the current user
     if (isAdmin !== 'true') {
-      query.isApproved = true;
+      if (userId) {
+        query.$or = [
+          { isApproved: true },
+          { reportedBy: userId }
+        ];
+      } else {
+        query.isApproved = true;
+      }
     }
     
     const items = await Item.find(query).populate('reportedBy', 'name email').sort({ createdAt: -1 });
