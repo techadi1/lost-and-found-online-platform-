@@ -63,6 +63,7 @@ const Home = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userInfo.token}`
           },
           body: JSON.stringify({ userId: userInfo._id }),
         });
