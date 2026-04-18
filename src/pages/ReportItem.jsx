@@ -128,7 +128,8 @@ const ReportItem = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to submit report');
+        const errorMessage = errorData.error ? `${errorData.message}: ${errorData.error}` : (errorData.message || 'Failed to submit report');
+        throw new Error(errorMessage);
       }
 
       navigate('/dashboard');
