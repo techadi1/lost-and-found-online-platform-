@@ -310,15 +310,16 @@ app.post('/api/items/:id/claim', protect, async (req, res) => {
       return res.status(400).json({ message: 'Only found items can be claimed' });
     }
 
-    // Check if user has already claimed this item
+    // Check if user has already claimed this item (including rejected ones)
     const existingClaim = await ClaimRecord.findOne({
       item: req.params.id,
-      claimedBy: req.user._id,
-      status: { $ne: 'rejected' } // Allow re-claiming only if previous claim was rejected? Or maybe not?
-                                 // Usually, if it's pending or approved, you shouldn't re-claim.
+      claimedBy: req.user._id
     });
 
     if (existingClaim) {
+      if (existingClaim.status === 'rejected') {
+        return res.status(400).json({ message: 'Your previous claim for this item was rejected. Please contact support if you believe this is an error.' });
+      }
       return res.status(400).json({ message: 'You have already made a claim, wait for admin verification' });
     }
     

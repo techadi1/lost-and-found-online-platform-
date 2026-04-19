@@ -173,8 +173,11 @@ router.post('/:id/claim', async (req, res) => {
       }
 
       // Check if user has already claimed this item
-      const existingClaim = await ClaimRecord.findOne({ itemId: item._id, claimantId: userId, status: 'Pending' });
+      const existingClaim = await ClaimRecord.findOne({ itemId: item._id, claimantId: userId });
       if (existingClaim) {
+        if (existingClaim.status.toLowerCase() === 'rejected') {
+          return res.status(400).json({ message: 'Your previous claim for this item was rejected. Please contact support if you believe this is an error.' });
+        }
         return res.status(400).json({ message: 'You have already made a claim, wait for admin verification' });
       }
 
