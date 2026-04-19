@@ -7,7 +7,13 @@ const claimRecordSchema = new mongoose.Schema({
   claimDate: { type: Date, default: Date.now },
   status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
   itemStatusAtClaim: { type: String },
-  adminNotes: { type: String }
+  adminNotes: { type: String },
+  collectionTime: { type: String },
+  messages: [{
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    text: { type: String },
+    timestamp: { type: Date, default: Date.now }
+  }]
 }, {
   timestamps: true
 });

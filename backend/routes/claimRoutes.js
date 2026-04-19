@@ -12,6 +12,7 @@ router.get('/', async (req, res) => {
       .populate('itemId', 'title imageUrl')
       .populate('reporterId', 'name email')
       .populate('claimantId', 'name email')
+      .populate('messages.sender', 'name role')
       .sort({ createdAt: -1 });
     res.json(claims);
   } catch (error) {
@@ -29,6 +30,7 @@ router.put('/:id', async (req, res) => {
       
       claim.status = newStatus;
       claim.adminNotes = req.body.adminNotes || claim.adminNotes;
+      claim.collectionTime = req.body.collectionTime || claim.collectionTime;
       const updatedClaim = await claim.save();
 
       // IF status changed to APPROVED
@@ -118,6 +120,28 @@ router.delete('/:id', async (req, res) => {
 
     await claim.deleteOne();
     res.json({ message: 'Claim removed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @desc    Add message to claim verification (Admin/User)
+router.post('/:id/messages', async (req, res) => {
+  try {
+    const claim = await ClaimRecord.findById(req.params.id);
+    if (!claim) return res.status(404).json({ message: 'Claim record not found' });
+
+    const newMessage = {
+      sender: req.user?._id || req.body.senderId, // Support both auth middleware and direct pass
+      text: req.body.text,
+      timestamp: new Date()
+    };
+
+    claim.messages.push(newMessage);
+    await claim.save();
+    
+    const updatedClaim = await ClaimRecord.findById(claim._id).populate('messages.sender', 'name role');
+    res.json(updatedClaim);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

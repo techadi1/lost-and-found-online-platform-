@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { FiBox, FiCheckCircle, FiClock, FiTrash2, FiEdit2, FiX, FiSave, FiAward, FiUser, FiInfo } from 'react-icons/fi';
+import { FiBox, FiCheckCircle, FiClock, FiTrash2, FiEdit2, FiX, FiSave, FiAward, FiUser, FiInfo, FiSend } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import './AdminDashboard.css';
 import { API_URL, API_BASE_URL } from '../config';
 
 const AdminDashboard = () => {
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+
   const [items, setItems] = useState([]);
   const [claimRecords, setClaimRecords] = useState([]);
   const [supportTickets, setSupportTickets] = useState([]);
@@ -36,7 +38,6 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
     if (!userInfo || userInfo.role !== 'admin') {
       navigate('/login');
       return;
