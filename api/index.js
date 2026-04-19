@@ -169,7 +169,7 @@ app.post('/api/auth/register', async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
     res.status(201).json({ ...user.toObject(), password: undefined, token });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating item', error: error.message });
+    res.status(500).json({ message: 'Error registering user', error: error.message });
   }
 });
 
@@ -183,7 +183,7 @@ app.post('/api/auth/login', async (req, res) => {
     const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
     res.json({ ...user.toObject(), password: undefined, token });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating item', error: error.message });
+    res.status(500).json({ message: 'Error logging in', error: error.message });
   }
 });
 
@@ -281,7 +281,7 @@ app.put('/api/items/:id', protect, async (req, res) => {
     await item.save();
     res.json(item);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating item', error: error.message });
+    res.status(500).json({ message: 'Error updating item', error: error.message });
   }
 });
 
@@ -297,7 +297,7 @@ app.delete('/api/items/:id', protect, async (req, res) => {
     await item.deleteOne();
     res.json({ message: 'Item removed' });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating item', error: error.message });
+    res.status(500).json({ message: 'Error deleting item', error: error.message });
   }
 });
 
