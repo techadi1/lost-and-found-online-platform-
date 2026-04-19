@@ -175,7 +175,7 @@ router.post('/:id/claim', async (req, res) => {
       // Check if user has already claimed this item
       const existingClaim = await ClaimRecord.findOne({ itemId: item._id, claimantId: userId, status: 'Pending' });
       if (existingClaim) {
-        return res.status(400).json({ message: 'You have already requested a claim for this item' });
+        return res.status(400).json({ message: 'You have already made a claim, wait for admin verification' });
       }
 
       // In the new logic, we don't mark status as Claimed yet.
