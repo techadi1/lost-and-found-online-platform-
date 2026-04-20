@@ -7,56 +7,19 @@ import { API_URL, API_BASE_URL } from '../config';
 const UserDashboard = () => {
   const [items, setItems] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [myClaims, setMyClaims] = useState([]);
-  const [replyMessages, setReplyMessages] = useState({}); // {claimId: message}
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all' or 'found'
   const navigate = useNavigate();
   const userInfo = JSON.parse(localStorage.getItem('userInfo'));
 
-  const handleSendReply = async (claimId) => {
-    const text = replyMessages[claimId];
-    if (!text?.trim()) return;
-
-    try {
-      const token = userInfo?.token;
-      const response = await fetch(`${API_URL}/claims/${claimId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ text }),
-      });
-
-      if (response.ok) {
-        const updatedClaim = await response.json();
-        setMyClaims(myClaims.map(c => c._id === updatedClaim._id ? { ...c, messages: updatedClaim.messages } : c));
-        setReplyMessages({ ...replyMessages, [claimId]: '' });
-      } else {
-        alert('Failed to send reply');
-      }
-    } catch (err) {
-      alert('Error sending reply');
-    }
-  };
-
   useEffect(() => {
     if (!userInfo) {
       navigate('/login');
       return;
     }
-
-    // Load cached data for instant feel
-    const cachedData = localStorage.getItem(`dashboard_cache_${userInfo._id}`);
-    if (cachedData) {
-      const { items, notifications, myClaims } = JSON.parse(cachedData);
-      setItems(items);
-      setNotifications(notifications);
-      setMyClaims(myClaims);
-      setLoading(false); // Can skip loading state if cache exists
-    }
+    
+    if (error) return; // Don't fetch if already errored
 
     const fetchData = async () => {
       try {
@@ -71,33 +34,20 @@ const UserDashboard = () => {
           headers['Authorization'] = `Bearer ${token}`;
         }
         
-        const [itemsRes, notifRes, claimsRes] = await Promise.all([
+        const [itemsRes, notifRes] = await Promise.all([
           fetch(`${API_URL}/items?userId=${userInfo._id}`, { headers }),
-          fetch(`${API_URL}/notifications?userId=${userInfo._id}`, { headers }),
-          fetch(`${API_URL}/claims`, { headers })
+          fetch(`${API_URL}/notifications?userId=${userInfo._id}`, { headers })
         ]);
         
-        if (!itemsRes.ok || !notifRes.ok || !claimsRes.ok) {
+        if (!itemsRes.ok || !notifRes.ok) {
           throw new Error('Failed to fetch dashboard data');
         }
         
         const itemsData = await itemsRes.json();
         const notifData = await notifRes.json();
-        const claimsData = await claimsRes.json();
         
         setItems(itemsData);
         setNotifications(notifData);
-        // Only show my claims
-        const processedClaims = claimsData.filter(c => c.claimantId?._id === userInfo._id || c.claimantId === userInfo._id);
-        setMyClaims(processedClaims);
-        
-        // Cache data for next time
-        localStorage.setItem(`dashboard_cache_${userInfo._id}`, JSON.stringify({
-          items: itemsData,
-          notifications: notifData,
-          myClaims: processedClaims
-        }));
-
         setLoading(false);
       } catch (err) {
         setError(err.message);
@@ -148,34 +98,20 @@ const UserDashboard = () => {
     }
   };
 
-  const activeItems = items.filter(i => i.status && i.status.toLowerCase() !== 'claimed' && (i.reportedBy?._id === userInfo._id || i.reportedBy === userInfo._id));
-  const claimedByMe = myClaims;
+  if (loading) return <div className="container" style={{padding: '100px 0'}}>Loading your dashboard...</div>;
+  if (error || !userInfo) return <div className="container" style={{padding: '100px 0', color: 'red'}}>Error: {error || 'User not logged in'}</div>;
+
+  const activeItems = items.filter(i => i.status !== 'Claimed' && i.userId?._id === userInfo?._id);
+  const claimedByMe = items.filter(i => i.status === 'Claimed' && i.claimedBy === userInfo?._id);
   
-  const filteredItems = filter === 'found' ? activeItems.filter(i => i.status.toLowerCase() === 'found') : activeItems;
+  const filteredItems = filter === 'found' ? activeItems.filter(i => i.status?.toLowerCase() === 'found') : activeItems;
 
   const stats = [
     { label: 'My Reports', value: activeItems.length.toString(), icon: <FiBox />, color: 'blue' },
-    { label: 'Found Items', value: activeItems.filter(i => i.status.toLowerCase() === 'found').length.toString(), icon: <FiCheckCircle />, color: 'green' },
-    { label: 'Lost Items', value: activeItems.filter(i => i.status.toLowerCase() === 'lost').length.toString(), icon: <FiClock />, color: 'orange' },
+    { label: 'Found Items', value: activeItems.filter(i => i.status === 'Found').length.toString(), icon: <FiCheckCircle />, color: 'green' },
+    { label: 'Lost Items', value: activeItems.filter(i => i.status === 'Lost').length.toString(), icon: <FiClock />, color: 'orange' },
     { label: 'My Claims', value: claimedByMe.length.toString(), icon: <FiAward />, color: 'purple' },
   ];
-
-  if (loading) return (
-    <div className="admin-page" style={{padding: '100px 0'}}>
-      <div className="container">
-        <header className="page-header">
-          <div className="skeleton" style={{width: '300px', height: '40px', marginBottom: '10px'}}></div>
-          <div className="skeleton" style={{width: '200px', height: '20px'}}></div>
-        </header>
-        <div className="stats-grid">
-          {[1,2,3,4].map(i => (
-            <div key={i} className="stat-card skeleton" style={{height: '100px'}}></div>
-          ))}
-        </div>
-        <div className="skeleton" style={{width: '100%', height: '400px', marginTop: '40px', borderRadius: '12px'}}></div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="admin-page fade-in">
@@ -192,16 +128,7 @@ const UserDashboard = () => {
 
         <section className="stats-grid">
           {stats.map((stat, index) => (
-            <div 
-              key={index} 
-              className={`stat-card ${stat.color} ${filter === 'all' && index === 0 ? 'active' : filter === 'found' && index === 1 ? 'active' : ''}`}
-              style={{cursor: 'pointer', transition: 'all 0.2s'}}
-              onClick={() => {
-                if (index === 0) setFilter('all');
-                else if (index === 1) setFilter('found');
-                else if (index === 2) setFilter('all');
-              }}
-            >
+            <div key={index} className={`stat-card ${stat.color}`}>
               <div className="stat-icon">{stat.icon}</div>
               <div className="stat-info">
                 <span className="stat-label">{stat.label}</span>
@@ -327,7 +254,7 @@ const UserDashboard = () => {
                         </div>
                       </td>
                       <td>
-                        <span className={`status-pill ${item.status.toLowerCase()}`}>
+                        <span className={`status-pill ${(item.status || 'unknown').toLowerCase()}`}>
                           {item.status}
                         </span>
                       </td>
@@ -379,79 +306,32 @@ const UserDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {claimedByMe.map(claim => (
-                    <tr key={claim._id}>
+                  {claimedByMe.map(item => (
+                    <tr key={item._id}>
                       <td>
                         <div className="item-cell">
-                          {claim.itemId?.imageUrl && (
+                          {item.imageUrl && (
                             <img 
-                              src={claim.itemId.imageUrl.startsWith('/uploads/') ? `${API_BASE_URL}${claim.itemId.imageUrl}` : claim.itemId.imageUrl} 
+                              src={item.imageUrl.startsWith('/uploads/') ? `${API_BASE_URL}${item.imageUrl}` : item.imageUrl} 
                               alt="" 
                               className="item-thumb" 
                             />
                           )}
-                          <span>{claim.itemId?.title || 'Unknown Item'}</span>
+                          <span>{item.title}</span>
                         </div>
                       </td>
                       <td>
                         <div className="user-cell" style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                           <FiUser />
-                          <span>{claim.itemId?.reportedBy?.name || 'Admin'}</span>
+                          <span>{item.userId?.name || 'Unknown'}</span>
                         </div>
                       </td>
                       <td>
-                        <span className={`status-pill ${claim.status.toLowerCase()}`}>
-                          {claim.status}
+                        <span className="status-pill claimed">
+                          Claimed
                         </span>
-                        
-                        {/* Chat History */}
-                        {claim.messages && claim.messages.length > 0 && (
-                          <div style={{marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px'}}>
-                            {claim.messages.map((msg, idx) => (
-                              <div key={idx} style={{
-                                alignSelf: msg.sender?._id === userInfo._id || msg.sender === userInfo._id ? 'flex-end' : 'flex-start',
-                                background: msg.sender?._id === userInfo._id || msg.sender === userInfo._id ? '#3b82f6' : '#f1f5f9',
-                                color: msg.sender?._id === userInfo._id || msg.sender === userInfo._id ? 'white' : '#475569',
-                                padding: '5px 10px',
-                                borderRadius: '10px',
-                                fontSize: '0.75rem',
-                                maxWidth: '90%'
-                              }}>
-                                <strong>{msg.sender?._id === userInfo._id || msg.sender === userInfo._id ? 'Me: ' : 'Admin: '}</strong>
-                                {msg.text}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Reply Input */}
-                        {claim.status === 'pending' && (
-                          <div style={{marginTop: '10px', display: 'flex', gap: '5px'}}>
-                            <input 
-                              type="text" 
-                              placeholder="Reply to admin..." 
-                              value={replyMessages[claim._id] || ''}
-                              onChange={(e) => setReplyMessages({...replyMessages, [claim._id]: e.target.value})}
-                              style={{flex: 1, padding: '5px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid #e2e8f0'}}
-                            />
-                            <button 
-                              onClick={() => handleSendReply(claim._id)} 
-                              className="btn btn-primary" 
-                              style={{padding: '5px 10px', fontSize: '0.75rem'}}
-                              disabled={!replyMessages[claim._id]?.trim()}
-                            >
-                              <FiSend />
-                            </button>
-                          </div>
-                        )}
-
-                        {claim.collectionTime && claim.status === 'approved' && (
-                          <div style={{fontSize: '0.8rem', color: '#047857', marginTop: '5px', background: '#ecfdf5', padding: '5px', borderRadius: '4px'}}>
-                            <strong>Slot:</strong> {claim.collectionTime}
-                          </div>
-                        )}
                       </td>
-                      <td>{new Date(claim.createdAt).toLocaleDateString()}</td>
+                      <td>{item.claimedAt ? new Date(item.claimedAt).toLocaleDateString() : 'N/A'}</td>
                     </tr>
                   ))}
                 </tbody>

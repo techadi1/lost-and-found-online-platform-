@@ -156,7 +156,7 @@ const HelpDesk = () => {
                     </td>
                     <td>{ticket.relatedItemId?.title || 'N/A'}</td>
                     <td>
-                      <span className={`status-pill ${ticket.status.toLowerCase().replace(' ', '-')}`}>
+                      <span className={`status-pill ${(ticket.status || 'unknown').toLowerCase().replace(' ', '-')}`}>
                         {ticket.status}
                       </span>
                     </td>

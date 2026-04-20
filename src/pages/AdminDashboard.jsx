@@ -60,22 +60,22 @@ const AdminDashboard = () => {
       setLoading(true);
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       const token = userInfo?.token;
-      
+
       const headers = {
         'Content-Type': 'application/json',
       };
-      
+
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-      
+
       const [itemsRes, claimsRes, supportRes, statsRes] = await Promise.all([
         fetch(`${API_URL}/items?isAdmin=true&excludeImage=true`, { headers }), // Exclude image for faster initial load
         fetch(`${API_URL}/claims`, { headers }),
         fetch(`${API_URL}/support`, { headers }),
         fetch(`${API_URL}/admin/stats`, { headers })
       ]);
-      
+
       if (!itemsRes.ok || !claimsRes.ok || !supportRes.ok || !statsRes.ok) throw new Error('Failed to fetch data');
 
       const itemsData = await itemsRes.json();
@@ -114,21 +114,21 @@ const AdminDashboard = () => {
     totalItems: items.length,
     pendingApprovals: items.filter(i => !i.isApproved).length,
     approvedItems: items.filter(i => i.isApproved).length,
-    lostItems: items.filter(i => i.status.toLowerCase() === 'lost').length,
-    foundItems: items.filter(i => i.status.toLowerCase() === 'found').length,
+    lostItems: items.filter(i => i.status && i.status.toLowerCase() === 'lost').length,
+    foundItems: items.filter(i => i.status && i.status.toLowerCase() === 'found').length,
     totalClaims: claimRecords.length,
-    pendingClaims: claimRecords.filter(c => c.status.toLowerCase() === 'pending').length,
-    approvedClaims: claimRecords.filter(c => c.status.toLowerCase() === 'approved').length,
+    pendingClaims: claimRecords.filter(c => c.status && c.status.toLowerCase() === 'pending').length,
+    approvedClaims: claimRecords.filter(c => c.status && c.status.toLowerCase() === 'approved').length,
     totalTickets: supportTickets.length,
-    openTickets: supportTickets.filter(t => t.status.toLowerCase() === 'open').length,
-    resolvedTickets: supportTickets.filter(t => t.status.toLowerCase() === 'resolved').length,
+    openTickets: supportTickets.filter(t => t.status && t.status.toLowerCase() === 'open').length,
+    resolvedTickets: supportTickets.filter(t => t.status && t.status.toLowerCase() === 'resolved').length,
   };
 
   const handleApproveItem = async (id) => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       const token = userInfo?.token;
-      
+
       const response = await fetch(`${API_URL}/items/${id}`, {
         method: 'PUT',
         headers: {
@@ -152,7 +152,7 @@ const AdminDashboard = () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       const token = userInfo?.token;
-      
+
       const response = await fetch(`${API_URL}/items/${id}`, {
         method: 'PUT',
         headers: {
@@ -177,7 +177,7 @@ const AdminDashboard = () => {
       try {
         const userInfo = JSON.parse(localStorage.getItem('userInfo'));
         const token = userInfo?.token;
-        
+
         const response = await fetch(`${API_URL}/items/${id}`, {
           method: 'DELETE',
           headers: {
@@ -200,7 +200,7 @@ const AdminDashboard = () => {
       try {
         const userInfo = JSON.parse(localStorage.getItem('userInfo'));
         const token = userInfo?.token;
-        
+
         const response = await fetch(`${API_URL}/claims/${id}`, {
           method: 'DELETE',
           headers: {
@@ -228,7 +228,7 @@ const AdminDashboard = () => {
         formData.append(key, editingItem[key]);
       }
     });
-    
+
     if (selectedEditImage) {
       formData.append('image', selectedEditImage);
     }
@@ -236,7 +236,7 @@ const AdminDashboard = () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       const token = userInfo?.token;
-      
+
       const response = await fetch(`${API_URL}/items/${editingItem._id}`, {
         method: 'PUT',
         headers: {
@@ -293,7 +293,7 @@ const AdminDashboard = () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       const token = userInfo?.token;
-      
+
       const response = await fetch(`${API_URL}/claims/${editingClaim._id}`, {
         method: 'PUT',
         headers: {
@@ -324,7 +324,7 @@ const AdminDashboard = () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       const token = userInfo?.token;
-      
+
       const response = await fetch(`${API_URL}/support/${editingTicket._id}`, {
         method: 'PUT',
         headers: {
@@ -356,7 +356,7 @@ const AdminDashboard = () => {
       try {
         const userInfo = JSON.parse(localStorage.getItem('userInfo'));
         const token = userInfo?.token;
-        
+
         const response = await fetch(`${API_URL}/support/${id}`, {
           method: 'DELETE',
           headers: {
@@ -381,7 +381,7 @@ const AdminDashboard = () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       const token = userInfo?.token;
-      
+
       const response = await fetch(`${API_URL}/notifications`, {
         method: 'POST',
         headers: {
@@ -420,7 +420,7 @@ const AdminDashboard = () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       const token = userInfo?.token;
-      
+
       const promises = selectedItems.map(id =>
         fetch(`${API_URL}/items/${id}`, {
           method: 'PUT',
@@ -452,7 +452,7 @@ const AdminDashboard = () => {
     try {
       const userInfo = JSON.parse(localStorage.getItem('userInfo'));
       const token = userInfo?.token;
-      
+
       const promises = selectedItems.map(id =>
         fetch(`${API_URL}/items/${id}`, {
           method: 'DELETE',
@@ -473,7 +473,7 @@ const AdminDashboard = () => {
   };
 
   const handleSelectItem = (id) => {
-    setSelectedItems(prev => 
+    setSelectedItems(prev =>
       prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
     );
   };
@@ -487,8 +487,8 @@ const AdminDashboard = () => {
     setSelectAll(!selectAll);
   };
 
-  const filteredReports = itemFilter === 'All' 
-    ? items 
+  const filteredReports = itemFilter === 'All'
+    ? items
     : items.filter(item => item.status && item.status.toLowerCase() === itemFilter.toLowerCase());
 
   const stats = [
@@ -505,18 +505,18 @@ const AdminDashboard = () => {
   ];
 
   if (loading) return (
-    <div className="admin-page" style={{padding: '100px 0'}}>
+    <div className="admin-page" style={{ padding: '100px 0' }}>
       <div className="container">
         <header className="page-header">
-          <div className="skeleton" style={{width: '300px', height: '40px', marginBottom: '10px'}}></div>
-          <div className="skeleton" style={{width: '200px', height: '20px'}}></div>
+          <div className="skeleton" style={{ width: '300px', height: '40px', marginBottom: '10px' }}></div>
+          <div className="skeleton" style={{ width: '200px', height: '20px' }}></div>
         </header>
         <div className="stats-grid">
-          {[1,2,3,4,5,6].map(i => (
-            <div key={i} className="stat-card skeleton" style={{height: '100px'}}></div>
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="stat-card skeleton" style={{ height: '100px' }}></div>
           ))}
         </div>
-        <div className="skeleton" style={{width: '100%', height: '500px', marginTop: '40px', borderRadius: '12px'}}></div>
+        <div className="skeleton" style={{ width: '100%', height: '500px', marginTop: '40px', borderRadius: '12px' }}></div>
       </div>
     </div>
   );
@@ -532,11 +532,11 @@ const AdminDashboard = () => {
 
         <section className="stats-grid">
           {stats.map((stat, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className={`stat-card ${stat.color} ${itemFilter === stat.filter ? 'active-filter' : ''}`}
               onClick={() => setItemFilter(stat.filter)}
-              style={{cursor: 'pointer', border: itemFilter === stat.filter ? '2px solid currentColor' : 'none'}}
+              style={{ cursor: 'pointer', border: itemFilter === stat.filter ? '2px solid currentColor' : 'none' }}
             >
               <div className="stat-icon">{stat.icon}</div>
               <div className="stat-info">
@@ -547,7 +547,7 @@ const AdminDashboard = () => {
           ))}
         </section>
 
-        <section className="stats-grid" style={{marginTop: '1.5rem'}}>
+        <section className="stats-grid" style={{ marginTop: '1.5rem' }}>
           {analyticsStats.map((stat, index) => (
             <div key={index} className={`stat-card ${stat.color}`}>
               <div className="stat-icon">{stat.icon}</div>
@@ -568,19 +568,19 @@ const AdminDashboard = () => {
         {/* Section 1: Reports Table */}
         {activeTab === 'reports' && (
           <section className="table-container fade-in">
-            <div className="table-header" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+            <div className="table-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h2>{itemFilter === 'All' ? 'All' : itemFilter} Reports (Lost & Found)</h2>
-                <p style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                   {itemFilter === 'All' ? 'Includes claimed and unclaimed items' : `Showing only ${itemFilter.toLowerCase()} items`}
                 </p>
               </div>
               {selectedItems.length > 0 && (
                 <div className="bulk-actions">
-                  <button className="btn btn-sm" style={{background: '#22c55e', color: 'white', border: 'none', marginRight: '0.5rem'}} onClick={handleBulkApprove}>
+                  <button className="btn btn-sm" style={{ background: '#22c55e', color: 'white', border: 'none', marginRight: '0.5rem' }} onClick={handleBulkApprove}>
                     Approve Selected ({selectedItems.length})
                   </button>
-                  <button className="btn btn-sm" style={{background: '#ef4444', color: 'white', border: 'none'}} onClick={handleBulkDelete}>
+                  <button className="btn btn-sm" style={{ background: '#ef4444', color: 'white', border: 'none' }} onClick={handleBulkDelete}>
                     Delete Selected ({selectedItems.length})
                   </button>
                 </div>
@@ -590,9 +590,9 @@ const AdminDashboard = () => {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th style={{width: '40px'}}>
-                      <input 
-                        type="checkbox" 
+                    <th style={{ width: '40px' }}>
+                      <input
+                        type="checkbox"
                         checked={selectAll}
                         onChange={handleSelectAll}
                       />
@@ -609,8 +609,8 @@ const AdminDashboard = () => {
                   {filteredReports.length > 0 ? filteredReports.map(item => (
                     <tr key={item._id}>
                       <td>
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={selectedItems.includes(item._id)}
                           onChange={() => handleSelectItem(item._id)}
                         />
@@ -618,9 +618,9 @@ const AdminDashboard = () => {
                       <td>
                         <div className="item-cell">
                           {item.imageUrl ? (
-                            <img 
-                              src={item.imageUrl.startsWith('/uploads/') ? `${API_BASE_URL}${item.imageUrl}` : item.imageUrl} 
-                              alt="" 
+                            <img
+                              src={item.imageUrl.startsWith('/uploads/') ? `${API_BASE_URL}${item.imageUrl}` : item.imageUrl}
+                              alt=""
                               className="item-thumb"
                               onError={(e) => {
                                 e.target.style.display = 'none';
@@ -643,7 +643,7 @@ const AdminDashboard = () => {
                         </div>
                       </td>
                       <td>{item.reportedBy?.name || 'Unknown'}</td>
-                      <td><span className={`status-pill ${item.status.toLowerCase()}`}>{item.status}</span></td>
+                      <td><span className={`status-pill ${(item.status || 'unknown').toLowerCase()}`}>{item.status}</span></td>
                       <td>
                         <span className={`status-pill ${item.isApproved ? 'approved' : 'pending'}`}>
                           {item.isApproved ? 'Approved' : 'Pending'}
@@ -653,9 +653,9 @@ const AdminDashboard = () => {
                       <td>
                         <div className="action-buttons">
                           {!item.isApproved && (
-                            <button 
-                              className="icon-btn edit" 
-                              style={{background: '#10b981', color: 'white'}} 
+                            <button
+                              className="icon-btn edit"
+                              style={{ background: '#10b981', color: 'white' }}
                               onClick={() => handleApproveItem(item._id)}
                               title="Approve Item"
                             >
@@ -663,9 +663,9 @@ const AdminDashboard = () => {
                             </button>
                           )}
                           {item.isApproved && (
-                            <button 
-                              className="icon-btn edit" 
-                              style={{background: '#ef4444', color: 'white'}} 
+                            <button
+                              className="icon-btn edit"
+                              style={{ background: '#ef4444', color: 'white' }}
                               onClick={() => handleDisapproveItem(item._id)}
                               title="Disapprove Item"
                             >
@@ -678,7 +678,7 @@ const AdminDashboard = () => {
                       </td>
                     </tr>
                   )) : (
-                    <tr><td colSpan="6" style={{textAlign: 'center', padding: '20px'}}>No reports found.</td></tr>
+                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>No reports found.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -688,10 +688,10 @@ const AdminDashboard = () => {
 
         {/* Section 2: Support Tickets */}
         {activeTab === 'support' && (
-          <section className="table-container fade-in" style={{marginTop: '20px'}}>
+          <section className="table-container fade-in" style={{ marginTop: '20px' }}>
             <div className="table-header">
               <h2>Support & Help Tickets</h2>
-              <p style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Manage user concerns and remove completed tickets</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Manage user concerns and remove completed tickets</p>
             </div>
             <div className="table-responsive">
               <table className="admin-table">
@@ -712,27 +712,27 @@ const AdminDashboard = () => {
                       <td>{ticket.subject}</td>
                       <td>{ticket.relatedItemId?.title || 'None'}</td>
                       <td>
-                        <span className={`status-pill ${ticket.status.toLowerCase().replace(' ', '-')}`}>
+                        <span className={`status-pill ${(ticket.status || 'unknown').toLowerCase().replace(' ', '-')}`}>
                           {ticket.status}
                         </span>
                       </td>
                       <td>{new Date(ticket.createdAt).toLocaleDateString()}</td>
                       <td>
                         <div className="action-buttons">
-                          <button 
-                            className="icon-btn edit" 
-                            onClick={() => { 
-                              setEditingTicket(ticket); 
+                          <button
+                            className="icon-btn edit"
+                            onClick={() => {
+                              setEditingTicket(ticket);
                               setTicketStatus(ticket.status);
                               setAdminReply(ticket.adminReply || '');
-                              setShowTicketModal(true); 
+                              setShowTicketModal(true);
                             }}
                             title="Respond to Ticket"
                           >
                             <FiEdit2 />
                           </button>
-                          <button 
-                            className="icon-btn delete" 
+                          <button
+                            className="icon-btn delete"
                             onClick={() => handleDeleteTicket(ticket._id)}
                             title="Delete Ticket"
                           >
@@ -742,7 +742,7 @@ const AdminDashboard = () => {
                       </td>
                     </tr>
                   )) : (
-                    <tr><td colSpan="6" style={{textAlign: 'center', padding: '20px'}}>No support tickets found.</td></tr>
+                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>No support tickets found.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -752,10 +752,10 @@ const AdminDashboard = () => {
 
         {/* Section 3: Claim Management */}
         {activeTab === 'claims' && (
-          <section className="table-container fade-in" style={{marginTop: '20px'}}>
+          <section className="table-container fade-in" style={{ marginTop: '20px' }}>
             <div className="table-header">
               <h2>Claim Records Management</h2>
-              <p style={{fontSize: '0.8rem', color: 'var(--text-secondary)'}}>Review and audit all item claims</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Review and audit all item claims</p>
             </div>
             <div className="table-responsive">
               <table className="admin-table">
@@ -777,21 +777,21 @@ const AdminDashboard = () => {
                       <td>{record.reporterId?.name || 'Unknown Reporter'}</td>
                       <td>{new Date(record.claimDate).toLocaleDateString()}</td>
                       <td>
-                        <span className={`status-pill ${record.status.toLowerCase()}`}>
+                        <span className={`status-pill ${(record.status || 'unknown').toLowerCase()}`}>
                           {record.status}
                         </span>
                       </td>
                       <td>
                         <div className="action-buttons">
-                          <button 
-                            className="icon-btn edit" 
+                          <button
+                            className="icon-btn edit"
                             onClick={() => { setEditingClaim(record); setShowClaimModal(true); }}
                             title="Manage Claim Record"
                           >
                             <FiInfo />
                           </button>
-                          <button 
-                            className="icon-btn delete" 
+                          <button
+                            className="icon-btn delete"
                             onClick={() => handleDeleteClaim(record._id)}
                             title="Delete Claim Record"
                           >
@@ -801,7 +801,7 @@ const AdminDashboard = () => {
                       </td>
                     </tr>
                   )) : (
-                    <tr><td colSpan="6" style={{textAlign: 'center', padding: '20px'}}>No claim records found.</td></tr>
+                    <tr><td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>No claim records found.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -819,25 +819,25 @@ const AdminDashboard = () => {
               <button className="close-btn" onClick={() => { setShowItemModal(false); setSelectedEditImage(null); }}><FiX /></button>
             </div>
             <form onSubmit={handleUpdateItem}>
-              <div className="form-group"><label>Title</label><input type="text" value={editingItem.title} onChange={(e)=>setEditingItem({...editingItem, title: e.target.value})} required/></div>
+              <div className="form-group"><label>Title</label><input type="text" value={editingItem.title} onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })} required /></div>
               <div className="form-row">
                 <div className="form-group half"><label>Status</label>
-                  <select value={editingItem.status} onChange={(e)=>setEditingItem({...editingItem, status: e.target.value})}>
+                  <select value={editingItem.status} onChange={(e) => setEditingItem({ ...editingItem, status: e.target.value })}>
                     <option value="Lost">Lost</option><option value="Found">Found</option><option value="Claimed">Claimed</option>
                   </select>
                 </div>
                 <div className="form-group half"><label>Category</label>
-                  <select value={editingItem.category} onChange={(e)=>setEditingItem({...editingItem, category: e.target.value})}>
+                  <select value={editingItem.category} onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value })}>
                     <option value="Electronics">Electronics</option><option value="Bags">Bags</option><option value="Jewelry">Jewelry</option><option value="Keys">Keys</option><option value="Documents">Documents</option><option value="Other">Other</option>
                   </select>
                 </div>
               </div>
               <div className="form-group">
                 <label>Change Image (Optional)</label>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={(e) => setSelectedEditImage(e.target.files[0])} 
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setSelectedEditImage(e.target.files[0])}
                 />
               </div>
               <div className="modal-footer">
@@ -858,9 +858,9 @@ const AdminDashboard = () => {
               <button className="close-btn" onClick={() => setShowClaimModal(false)}><FiX /></button>
             </div>
             <form onSubmit={handleUpdateClaimStatus}>
-              <div className="chat-section" style={{marginBottom: '20px', background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0'}}>
-                <h3 style={{fontSize: '0.9rem', marginBottom: '10px', color: '#475569'}}>One-to-One Verification Chat</h3>
-                <div className="message-history" style={{maxHeight: '200px', overflowY: 'auto', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+              <div className="chat-section" style={{ marginBottom: '20px', background: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <h3 style={{ fontSize: '0.9rem', marginBottom: '10px', color: '#475569' }}>One-to-One Verification Chat</h3>
+                <div className="message-history" style={{ maxHeight: '200px', overflowY: 'auto', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {editingClaim.messages && editingClaim.messages.length > 0 ? editingClaim.messages.map((msg, idx) => (
                     <div key={idx} style={{
                       alignSelf: msg.sender?.role === 'admin' || msg.sender === userInfo._id ? 'flex-end' : 'flex-start',
@@ -871,19 +871,19 @@ const AdminDashboard = () => {
                       maxWidth: '80%',
                       fontSize: '0.85rem'
                     }}>
-                      <div style={{fontSize: '0.7rem', opacity: 0.8, marginBottom: '2px'}}>{msg.sender?.name || (msg.sender?.role === 'admin' ? 'Admin' : 'User')}</div>
+                      <div style={{ fontSize: '0.7rem', opacity: 0.8, marginBottom: '2px' }}>{msg.sender?.name || (msg.sender?.role === 'admin' ? 'Admin' : 'User')}</div>
                       {msg.text}
                     </div>
-                  )) : <p style={{fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic'}}>No messages yet. Ask the user a question to verify the claim.</p>}
+                  )) : <p style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>No messages yet. Ask the user a question to verify the claim.</p>}
                 </div>
-                <div style={{display: 'flex', gap: '8px'}}>
-                  <textarea 
-                    value={askMessage} 
-                    onChange={(e)=>setAskMessage(e.target.value)} 
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <textarea
+                    value={askMessage}
+                    onChange={(e) => setAskMessage(e.target.value)}
                     placeholder="Ask user for details (e.g. Serial number, specific marks)..."
-                    style={{flex: 1, minHeight: '60px', padding: '10px', fontSize: '0.85rem'}}
+                    style={{ flex: 1, minHeight: '60px', padding: '10px', fontSize: '0.85rem' }}
                   ></textarea>
-                  <button type="button" onClick={handleSendClaimMessage} className="btn btn-primary" style={{alignSelf: 'flex-end', height: 'fit-content'}} disabled={!askMessage.trim()}>
+                  <button type="button" onClick={handleSendClaimMessage} className="btn btn-primary" style={{ alignSelf: 'flex-end', height: 'fit-content' }} disabled={!askMessage.trim()}>
                     <FiSend />
                   </button>
                 </div>
@@ -891,7 +891,7 @@ const AdminDashboard = () => {
 
               <div className="form-group">
                 <label>Claim Status</label>
-                <select value={editingClaim.status} onChange={(e)=>setEditingClaim({...editingClaim, status: e.target.value.toLowerCase()})}>
+                <select value={editingClaim.status} onChange={(e) => setEditingClaim({ ...editingClaim, status: e.target.value.toLowerCase() })}>
                   <option value="pending">Pending</option>
                   <option value="approved">Approved</option>
                   <option value="rejected">Rejected</option>
@@ -899,18 +899,18 @@ const AdminDashboard = () => {
               </div>
               <div className="form-group">
                 <label>Collection Time Slot (Visible to User after Approval)</label>
-                <input 
+                <input
                   type="text"
-                  value={editingClaim.collectionTime || ''} 
-                  onChange={(e)=>setEditingClaim({...editingClaim, collectionTime: e.target.value})}
+                  value={editingClaim.collectionTime || ''}
+                  onChange={(e) => setEditingClaim({ ...editingClaim, collectionTime: e.target.value })}
                   placeholder="e.g. Monday 10:00 AM at Guard Gate"
                 />
               </div>
               <div className="form-group">
                 <label>Admin Internal Notes (Private)</label>
-                <textarea 
-                  value={editingClaim.adminNotes || ''} 
-                  onChange={(e)=>setEditingClaim({...editingClaim, adminNotes: e.target.value})}
+                <textarea
+                  value={editingClaim.adminNotes || ''}
+                  onChange={(e) => setEditingClaim({ ...editingClaim, adminNotes: e.target.value })}
                   placeholder="Private notes for administrators..."
                 ></textarea>
               </div>
@@ -931,11 +931,11 @@ const AdminDashboard = () => {
               <h2>Respond to Ticket</h2>
               <button className="close-btn" onClick={() => setShowTicketModal(false)}><FiX /></button>
             </div>
-            <div style={{marginBottom: '20px', padding: '15px', background: '#f8fafc', borderRadius: '8px'}}>
-              <h4 style={{marginBottom: '5px'}}>{editingTicket.subject}</h4>
-              <p style={{fontSize: '0.9rem', color: '#64748b'}}>{editingTicket.message}</p>
+            <div style={{ marginBottom: '20px', padding: '15px', background: '#f8fafc', borderRadius: '8px' }}>
+              <h4 style={{ marginBottom: '5px' }}>{editingTicket.subject}</h4>
+              <p style={{ fontSize: '0.9rem', color: '#64748b' }}>{editingTicket.message}</p>
               {editingTicket.relatedItemId && (
-                <div style={{marginTop: '10px', fontSize: '0.8rem', fontWeight: '600'}}>
+                <div style={{ marginTop: '10px', fontSize: '0.8rem', fontWeight: '600' }}>
                   Item: {editingTicket.relatedItemId.title}
                 </div>
               )}
@@ -943,7 +943,7 @@ const AdminDashboard = () => {
             <form onSubmit={handleUpdateTicket}>
               <div className="form-group">
                 <label>Ticket Status</label>
-                <select value={ticketStatus} onChange={(e)=>setTicketStatus(e.target.value)}>
+                <select value={ticketStatus} onChange={(e) => setTicketStatus(e.target.value)}>
                   <option value="Open">Open</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Resolved">Resolved</option>
@@ -951,9 +951,9 @@ const AdminDashboard = () => {
               </div>
               <div className="form-group">
                 <label>Admin Reply to User</label>
-                <textarea 
-                  value={adminReply} 
-                  onChange={(e)=>setAdminReply(e.target.value)}
+                <textarea
+                  value={adminReply}
+                  onChange={(e) => setAdminReply(e.target.value)}
                   placeholder="Type your response to the user here..."
                   required
                 ></textarea>
@@ -977,9 +977,9 @@ const AdminDashboard = () => {
             <form onSubmit={handleAskUser}>
               <div className="form-group">
                 <label>Question for {targetItem.reportedBy?.name || 'User'}</label>
-                <textarea 
-                  value={askMessage} 
-                  onChange={(e)=>setAskMessage(e.target.value)}
+                <textarea
+                  value={askMessage}
+                  onChange={(e) => setAskMessage(e.target.value)}
                   placeholder="e.g. Can you provide more details about where exactly you lost/found this?"
                   required
                 ></textarea>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { FiUser, FiMail, FiLock, FiArrowRight } from 'react-icons/fi';
 import { useNavigate, Link } from 'react-router-dom';
-import './Login.css';
 import { API_URL } from '../config';
 
 const Signup = () => {

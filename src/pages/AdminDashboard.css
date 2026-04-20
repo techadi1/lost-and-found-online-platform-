@@ -83,31 +83,23 @@
 
 .table-container {
   background: var(--surface);
-  border-radius: var(--radius-lg);
-  border: 2px solid var(--border-light);
-  box-shadow: var(--shadow-md);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
   overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.table-container:hover {
-  box-shadow: var(--shadow-lg);
 }
 
 .table-header {
-  padding: 1.75rem;
-  border-bottom: 2px solid var(--border-light);
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(to bottom, var(--surface) 0%, var(--surface-alt) 100%);
 }
 
 .table-header h2 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--primary);
-  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .admin-table {
